@@ -1,0 +1,43 @@
+#la version de docker a usar
+version: '2'
+#los servicios que se van a levantar
+#levantar un servicio llamado "peer-base"
+services:
+  peer-base:
+  #usa esta imagen, se consigue en
+  #https://hub.docker.com/r/hyperledger/fabric-peer
+    image: hyperledger/fabric-peer:2.2.0
+    environment:
+        #definir el endpoint
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      # the following setting starts chaincode containers on the same
+      # bridge network as the peers
+      # https://docs.docker.com/compose/networking/
+      # ---CHANGED---
+      #definir cual es la red que se va usar "acme-network_basic"
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=acme-network_basic
+      #definir el nivel de log, si se usa DEBUG se llenara el disco rapido
+      - FABRIC_LOGGING_SPEC=INFO
+      # - FABRIC_LOGGING_SPEC=DEBUG
+
+      #si el peer se va levantar en modo seguro, usando tls
+      - CORE_PEER_TLS_ENABLED=true
+
+      #protocolo gossip, protocolo de "chismes", esto lo que hace
+      #es si el nodo se cae cuando se levante, buscara el nodo mas cercano
+      #para actualizar el libro mayor (le pase el chisme)
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_PROFILE_ENABLED=true
+
+      #cuales certificados se van estar usando, hay que montar en el contenedor
+      #luego los certificados
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+
+    #direcitorio de trabajo por defecto
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+
+    #ejecuta el progrma "peer" para levantar el nodo
+    command: peer node start
